@@ -60,7 +60,6 @@ class HookAlertNowApp:
         #self._setup_svcnow_database()
         #self._load_priority_mapping()
         self.forwarder = self._setup_forwarder(servicenow_url, servicenow_username, servicenow_password)
-        self.forwarder.load_mappings_from_sqlite()
         self._setup_routes()
 
     def _configure_logging(self):
