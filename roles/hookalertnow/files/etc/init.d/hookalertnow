@@ -1,0 +1,39 @@
+#!/bin/bash
+
+### OMD INIT INFO
+# PIDFILE:  tmp/run/hookalertnow.pid
+# DEPENDS:  CONFIG_APACHE_MODE != none
+# BINARY:   /usr/bin/python3
+# ARGMATCH: local/bin/hookalertnow.py
+### END INIT INFO
+
+cd || exit 1
+#. etc/omd/site.conf
+#[ "$CONFIG_HOOKALERTNOW" = "on" ] || exit 5
+. .profile
+. lib/omd/init_profile
+
+DAEMON=/usr/bin/python3
+
+CFG_FILE=
+LOG_FILE=${OMD_ROOT}/var/log/hookalertnow/hookalertnow.log
+PID_FILE=${OMD_ROOT}/tmp/run/hookalertnow.pid
+
+unset LANG
+export LC_ALL=C
+
+OPTS="${OMD_ROOT}/local/bin/hookalertnow.py"
+#OPTS+=" --config=${CFG_FILE}"
+#OPTS+=" --web.external-url=https://$(hostname --fqdn)/${OMD_SITE}/hookalertnow"
+#OPTS+=" --bind-addr=${CONFIG_PROMXY_TCP_ADDR}:${CONFIG_PROMXY_TCP_PORT}"
+#OPTS+=" --log-level=info"
+#OPTS+=" --log-level=trace"
+NOHUP=1
+STORE_PID=1
+
+if [ ! -f $DAEMON ]; then
+    echo "hookalertnow binary $DAEMON not found."
+    exit 1
+fi
+
+__generic_init "$*"

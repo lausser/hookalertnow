@@ -1,0 +1,10 @@
+- hosts: localhost
+  connection: local
+  vars:
+    omdsite: demo
+    hookalertnow_bearer_token: gsgjseughjugughughiughgu
+    servicenow_api_password: s3cret
+    servicenow_api_username: admin
+    servicenow_api_url: https://dev.......service-now.com/api/now/table/incident
+  roles:
+    - hookalertnow

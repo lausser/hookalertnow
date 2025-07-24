@@ -1,0 +1,8 @@
+- debug:
+    msg: "please install python3-waitress and python3-bottle"
+- include_tasks: install_hookalertnow.yml
+- include_tasks: env_hookalertnow.yml
+- include_tasks: install_prometheus.yml
+- include_tasks: install_coshsh.yml
+- include_tasks: install_naenonow.yml
+- include_tasks: install_naemon.yml

@@ -1,0 +1,3 @@
+  - receiver: hookalertnow
+    group_interval: 1m
+    repeat_interval: 1m

@@ -1,0 +1,15 @@
+- name: coshsh-prepare-landscape
+  shell: ./share/coshsh/contrib/coshsh-prepare-landscape
+  args:
+    chdir: /omd/sites/demo
+    creates: /omd/sites/demo/var/coshsh/configs/firma/static
+  environment:
+    OMD_LANDSCAPE: firma
+
+- name: check_git_updates
+  shell: check_git_updates
+  args:
+    chdir: /omd/sites/demo
+    creates: /omd/sites/demo/etc/naemon/conf.d/firma/demo/custom
+
+

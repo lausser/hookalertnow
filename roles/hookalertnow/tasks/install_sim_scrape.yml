@@ -1,0 +1,1 @@
+roles/hookalertnow/templates/etc/prometheus/prometheus.d/scrape_configs/custom/simulated_cpu_usage.yml

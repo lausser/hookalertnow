@@ -1,0 +1,65 @@
+- name: install hookalertnow apache redirection
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/omd/sites/{{ omdsite }}/{{ item }}"
+    mode: 0644
+  with_items:
+  - etc/apache/conf.d/hookalertnow.conf
+
+- name: install hookalertnow app server
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/omd/sites/{{ omdsite }}/{{ item }}"
+    mode: 0755
+  with_items:
+  - local/bin/svcnowsim.py
+  - local/bin/hookalertnow.py
+
+- name: create the folder for notificationforwarder
+  ansible.builtin.file:
+    path: "/omd/sites/{{ omdsite }}/{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+  - local/lib/python/notificationforwarder/hookalertnow
+
+- name: install hookalertnow formatter
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/omd/sites/{{ omdsite }}/{{ item }}"
+    mode: 0644
+  with_items:
+  - local/lib/python/notificationforwarder/hookalertnow/formatter.py
+  - local/lib/python/notificationforwarder/hookalertnow/forwarder.py
+
+- name: install hookalertnow startup file
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/omd/sites/{{ omdsite }}/{{ item }}"
+    mode: 0755
+  with_items:
+  - etc/init.d/hookalertnow
+
+- name: install hookalertnow rc symlink
+  ansible.builtin.file:
+    src: "../init.d/hookalertnow"
+    dest: "/omd/sites/{{ omdsite }}/etc/rc.d/84-hookalertnow"
+    state: link
+    follow: false
+
+- name: install alertmanager test route
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/omd/sites/{{ omdsite }}/{{ item }}"
+    mode: 0644
+  with_items:
+    - etc/alertmanager/alertmanager.d/routes/custom/hookalertnow.yml
+
+- name: install alertmanager test receiver
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: "/omd/sites/{{ omdsite }}/{{ item }}"
+    mode: 0644
+  with_items:
+    - etc/alertmanager/alertmanager.d/receivers/custom/hookalertnow.yml
+

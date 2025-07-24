@@ -1,0 +1,16 @@
+- name: create the folder for notificationforwarder
+  ansible.builtin.file:
+    path: "/omd/sites/{{ omdsite }}/{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+  - local/lib/python/notificationforwarder/naenonow
+
+- name: install naenonow formatter
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/omd/sites/{{ omdsite }}/{{ item }}"
+    mode: 0644
+  with_items:
+  - local/lib/python/notificationforwarder/naenonow/formatter.py
+

@@ -1,0 +1,24 @@
+- name: set the variables in etc/environment
+  ansible.builtin.blockinfile:
+    path: "/omd/sites/{{ omdsite }}/etc/environment"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK hookalertnow"
+    block: |
+      HOOKALERTNOW_WRITE_TOKEN={{ hookalertnow_bearer_token }}
+      # for the local simulator webserver
+      #SERVICENOW_INCIDENT_URL=https://127.0.0.1:8081/api/now/table/incident
+      #SERVICENOW_USERNAME=Monitoring
+      #SERVICENOW_PASSWORD=S3cr3t
+      # for the servicenow instance
+      SERVICENOW_PASSWORD={{ servicenow_api_password }}
+      SERVICENOW_USERNAME={{ servicenow_api_username }}
+      SERVICENOW_INCIDENT_URL={{ servicenow_api_url }}
+      NOTIFICATIONFORWARDER_MAX_SPOOL_MINUTES=10
+
+- name: set the landscape in etc/environment
+  ansible.builtin.blockinfile:
+    path: "/omd/sites/{{ omdsite }}/etc/environment"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK coshsh"
+    block: |
+      OMD_LANDSCAPE=firma
+
+

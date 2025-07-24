@@ -1,0 +1,13 @@
+- name: 'hookalertnow'
+  webhook_configs:
+  - url: 'https://127.0.0.1/demo/api/hookalertnow/forward'
+    send_resolved: true
+    http_config:
+      tls_config:
+        insecure_skip_verify: true
+      #basic_auth:
+      #  username: sepp
+      #  password: depp
+      authorization:
+        type: Bearer
+        credentials: "{{ hookalertnow_bearer_token }}"

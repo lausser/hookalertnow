@@ -1,0 +1,22 @@
+aufgebohrter forwarder, der die INC-Nummer zusammen mit
+einem Payload-Attribut speichert
+
+formatter
+bildet das Payload-Attribut (cluster+alert+tag)
+nachsehen, ob es ein INC dazu gibt und in welchem Status es sich befindet
+offen -> discard oder update
+closed -> INC aus DB loeschen, (neues INC durhc fowarder)
+in Bearb. -> discard oder update
+! wenn neuer Level, INC updaten
+kein INC -> neues INC (durch forwarder)
+formatter aendert die url fuer den forwarder
+
+CREATE TABLE (
+  topic VARCHAR(256)
+  assignment_group VARCHAR(256)
+  cmdb_ci / sys_id
+  ticket_status/prio <- falls im erstellungsresponse
+    - zum eventuellen Aktualsieren
+    - zum Schliessen
+)
+

@@ -1,0 +1,5 @@
+  - job_name: 'simulated_exporter'
+    scrape_interval: 5s
+    metrics_path: /exporter
+    static_configs:
+      - targets: ['localhost:8080']

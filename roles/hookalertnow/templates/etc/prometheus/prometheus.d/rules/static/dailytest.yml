@@ -1,0 +1,22 @@
+groups:
+- name: dailytest.yml
+  rules:
+  - alert: DailyTest
+    expr: vector(1) > 0
+    for: 1m
+    labels:
+      job: dailytest
+      severity: warning
+    annotations:
+      description: "Daily test alert (warning)"
+      summary: "Daily test alert (warning)"
+
+  - alert: DailyTest
+    expr: vector(time() % 1200 < bool 60)
+    for: 1m
+    labels:
+      job: dailytest
+      severity: critical
+    annotations:
+      description: "Daily test alert (critical)"
+      summary: "Daily test alert (critical)"

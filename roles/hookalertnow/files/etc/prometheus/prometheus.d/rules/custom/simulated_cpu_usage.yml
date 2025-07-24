@@ -1,0 +1,13 @@
+groups:
+- name: cpu_simulation.yml
+  rules:
+  - alert: HighCPUUsage
+    expr: simulated_cpu_usage > 40
+    for: 1m
+    labels:
+      severity: '{{ if gt $value 55.0 }}critical{{ else }}warning{{ end }}'
+    annotations:
+      cpu_usage: '{{ $value }}'
+      summary: "High Simulated CPU Usage: {{ $value | printf \"%.2f\" }}%"
+      description: "Simulated CPU usage is high. Current usage: {{ $value | printf \"%.2f\" }}%"
+

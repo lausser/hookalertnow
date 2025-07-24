@@ -1,0 +1,13 @@
+- name: create a host
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/omd/sites/{{ omdsite }}/{{ item }}"
+    mode: 0644
+  with_items:
+    - etc/naemon/naemon.cfg
+    - etc/naemon/conf.d/firma/demo/custom/host.cfg
+    - etc/naemon/conf.d/firma/demo/custom/service.cfg
+    - etc/naemon/conf.d/firma/demo/custom/contact.cfg
+    - etc/naemon/conf.d/firma/demo/custom/command.cfg
+
+
