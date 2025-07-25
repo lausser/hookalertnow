@@ -63,7 +63,7 @@ class HookalertnowForwarder(NotificationForwarder):
             ''')
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS priority_mapping (
-                order INTEGER PRIMARY KEY,
+                lookuporder INTEGER PRIMARY KEY,
                 impact INTEGER NOT NULL,
                 urgency INTEGER NOT NULL,
                 priority INTEGER NOT NULL
@@ -94,7 +94,7 @@ class HookalertnowForwarder(NotificationForwarder):
                 ('none', INCIDENT_PRIORITY_PLANNING)
             ]
             # priority_mapping laden
-            cursor.execute('SELECT order, impact, urgency, priority FROM priority_mapping ORDER BY order')
+            cursor.execute('SELECT lookuporder, impact, urgency, priority FROM priority_mapping ORDER BY lookuporder')
             rows = cursor.fetchall()
             if rows:
                 self.priority_mapping = [(row[1], row[2], row[3]) for row in rows]
@@ -102,7 +102,7 @@ class HookalertnowForwarder(NotificationForwarder):
             else:
                 logger.warning("No priority mapping in SQLite. Inserting and using default (deutsch).")
                 cursor.executemany('''
-                    INSERT INTO priority_mapping (order, impact, urgency, priority)
+                    INSERT INTO priority_mapping (lookuporder, impact, urgency, priority)
                     VALUES (?, ?, ?, ?)
                 ''', default_priority_mapping)
                 self.priority_mapping = [(impact, urgency, priority) for _, impact, urgency, priority in default_priority_mapping]
