@@ -37,12 +37,13 @@ class HookalertnowForwarder(NotificationForwarder):
         self.username = getattr(self, "username", None)
         self.password = getattr(self, "password", None)
         self.insecure = getattr(self, "insecure", "yes")
+        self.logger_name = getattr(self, "logger_name", "notificationforwarder_"+self.__class__.__name__.replace("Forwarder", "").lower())
         self.priority_mapping = []
         self.severity_to_priority = {}
         self.load_mappings_from_sqlite()
 
     def load_mappings_from_sqlite(self):
-        logger = logging.getLogger("hookalertnow")
+        logger = logging.getLogger(self.logger_name)
         db_path = os.environ["OMD_ROOT"] + "/var/tmp/svcnow.db"
         with sqlite3.connect(db_path) as conn:
             cursor = conn.cursor()
@@ -122,7 +123,7 @@ class HookalertnowForwarder(NotificationForwarder):
 
     def get_urgency_impact_for_priority(self, target_priority):
         """Sucht die erste Zeile in priority_mapping mit der gewünschten priority."""
-        logger = logging.getLogger("hookalertnow")
+        logger = logging.getLogger(self.logger_name)
         for impact, urgency, priority in self.priority_mapping:
             if priority == target_priority:
                 logger.debug(f"Found impact={impact}, urgency={urgency} for priority={target_priority}")
@@ -132,7 +133,7 @@ class HookalertnowForwarder(NotificationForwarder):
 
     def check_number_exists(self, number, current_event_topic):
         """Prüft, ob a number scho in incidents existiert, unabhängig von archived."""
-        logger = logging.getLogger("hookalertnow")
+        logger = logging.getLogger(self.logger_name)
         with sqlite3.connect(os.environ["OMD_ROOT"] + "/var/tmp/svcnow.db") as conn:
             cursor = conn.cursor()
             cursor.execute('SELECT event_topic, archived FROM incidents WHERE number = ?', (number,))
@@ -154,7 +155,7 @@ class HookalertnowForwarder(NotificationForwarder):
             return True if event.is_heartbeat else success
 
     def submit_one(self, event):
-        logger = logging.getLogger("hookalertnow")
+        logger = logging.getLogger(self.logger_name)
         request_params = {
             "auth": requests.auth.HTTPBasicAuth(self.username, self.password) if self.username and self.password else None,
             "verify": False if self.insecure == "yes" else True,
@@ -175,7 +176,7 @@ class HookalertnowForwarder(NotificationForwarder):
         status = getattr(event, "status", "firing")
         is_bad = (severity in ("critical", "warning") and status == "firing")
         is_harmless = (severity in ("info", "none") or status == "resolved")
-        auto_close = event.get("auto_close", True)  # Standard: True
+        auto_close = getattr(event, "auto_close", True)  # Standard: True
 
         payload_compare = {
             "cmdb_ci": event.payload.get("cmdb_ci", "-CI-"),
