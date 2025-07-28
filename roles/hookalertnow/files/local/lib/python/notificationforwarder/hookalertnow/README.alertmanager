@@ -1,0 +1,41 @@
+This is an example payload incoming from Alertmanager:
+
+    {
+      "receiver": "hookalertnow",
+      "status": "firing",
+      "alerts": [
+        {
+          "status": "firing",
+          "labels": {
+            "alertname": "MinutlyTest", <---
+            "job": "minutlytest",       <---
+            "monitor": "demo"           <---
+          },
+          "annotations": {
+            "description": "minutly alert test", <-desc
+            "summary": "minutly alert test"  <-short desc
+          },
+          "startsAt": "2025-03-10T11:59:24.061Z",
+          "endsAt": "0001-01-01T00:00:00Z",
+          "generatorURL": "http://f418b56abf02/demo/prometheus/graph?g0.expr=vector%281%29+%3E+0&g0.tab=1",
+          "fingerprint": "b1fe7a5d2c9e5714"
+        }
+      ],
+      "groupLabels": {
+        "alertname": "MinutlyTest"
+      },
+      "commonLabels": {
+        "alertname": "MinutlyTest",
+        "job": "minutlytest",
+        "monitor": "demo"
+      },
+      "commonAnnotations": {
+        "description": "minutly alert test",
+        "summary": "minutly alert test"
+      },
+      "externalURL": "http://f418b56abf02/demo/alertmanager",  <---- additional_info
+      "version": "4",
+      "groupKey": "{}/{}:{alertname=\"MinutlyTest\"}",
+      "truncatedAlerts": 0
+    }
+
