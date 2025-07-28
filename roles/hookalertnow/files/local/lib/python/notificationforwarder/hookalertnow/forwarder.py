@@ -90,6 +90,10 @@ class HookalertnowForwarder(NotificationForwarder):
             default_severity_mapping = [
                 ('critical', INCIDENT_PRIORITY_CRITICAL),
                 ('warning', INCIDENT_PRIORITY_MODERATE),
+                ('unknown', INCIDENT_PRIORITY_PLANNING),
+                ('ok', INCIDENT_PRIORITY_LOW),
+                ('down', INCIDENT_PRIORITY_MODERATE),
+                ('up', INCIDENT_PRIORITY_LOW),
                 ('info', INCIDENT_PRIORITY_LOW),
                 ('none', INCIDENT_PRIORITY_PLANNING)
             ]
@@ -98,21 +102,67 @@ class HookalertnowForwarder(NotificationForwarder):
             rows = cursor.fetchall()
             if rows:
                 self.priority_mapping = [(row[1], row[2], row[3]) for row in rows]
-                logger.info("Loaded priority mapping from SQLite")
-            else:
-                logger.warning("No priority mapping in SQLite. Inserting and using default (deutsch).")
+                logger.debug("Loaded priority mapping from SQLite")
+                action = os.environ.get("HOOKALERTNOW_RESET_PRIORITY_MAPPING", "ignore")
+                records = []
+                if action == "download":
+                    try:
+                        response = requests.get(self.url+'/dl_u_priority_list.do?JSONv2')
+                        response.raise_for_status()
+                        data = response.json()
+                        records = data.get('records', [])
+                        logger.info(f"Loaded {len(records)} priority rules from the instance")
+                        rows = []
+                    except:
+                        logger.info(f"Download of priority rules from the instance failed")
+                        records = []
+                elif action == "load":
+                    try:
+                        with open('/tmp/dl_u_priority_list.json', 'r') as f:
+                            data = json.load(f)
+                            records = data.get('records', [])
+                        logger.info(f"Loaded {len(records)} priority rules from the file")
+                        rows = []
+                    except:
+                        logger.info(f"Loading priority rules from the file failed")
+                        records = []
+                elif action == "default":
+                    logger.info(f"Reset priority rules to the default")
+                    rows = []
+                if records:
+                    default_priority_mapping = sorted(
+                        [(int(r['order']), int(r['impact']), int(r['urgency']), int(r['priority'])) for r in records],
+                        key=lambda x: x[0]
+                    )
+
+
+                if records or not rows:
+                    logger.info("Forcibly deleted priority mapping from SQLite")
+                    rows = []
+                    cursor.execute('''
+                        DELETE FROM priority_mapping
+                    ''')
+            if not rows:
+                logger.warning("No priority mapping in SQLite. Inserting and using default.")
                 cursor.executemany('''
                     INSERT INTO priority_mapping (lookuporder, impact, urgency, priority)
                     VALUES (?, ?, ?, ?)
                 ''', default_priority_mapping)
                 self.priority_mapping = [(impact, urgency, priority) for _, impact, urgency, priority in default_priority_mapping]
+
             # severity_to_priority laden
             cursor.execute('SELECT severity, priority FROM severity_to_priority')
             rows = cursor.fetchall()
             if rows:
                 self.severity_to_priority = {row[0]: row[1] for row in rows}
-                logger.info("Loaded severity-to-priority mapping from SQLite")
-            else:
+                logger.debug("Loaded severity-to-priority mapping from SQLite")
+                if os.environ.get("HOOKALERTNOW_RESET_SEVERITY_TO_PRIORITY"):
+                    logger.info("Forcibly deleted severity_to_priority from SQLite")
+                    rows = []
+                    cursor.execute('''
+                        DELETE FROM severity_to_priority
+                    ''')
+            if not rows:
                 logger.warning("No severity-to-priority mapping in SQLite. Inserting and using default.")
                 cursor.executemany('''
                     INSERT INTO severity_to_priority (severity, priority)
@@ -126,9 +176,9 @@ class HookalertnowForwarder(NotificationForwarder):
         logger = logging.getLogger(self.logger_name)
         for impact, urgency, priority in self.priority_mapping:
             if priority == target_priority:
-                logger.debug(f"Found impact={impact}, urgency={urgency} for priority={target_priority}")
+                logger.info(f"Found impact={impact}, urgency={urgency} for priority={target_priority}")
                 return str(impact), str(urgency)  # Als String für API
-        logger.warning(f"No matching impact/urgency found for priority={target_priority}, event_topic={event_topic}. Using defaults.")
+        logger.warning(f"No matching impact/urgency found for priority={target_priority}. Using defaults.")
         return INCIDENT_IMPACT_LOW, INCIDENT_URGENCY_LOW
 
     def check_number_exists(self, number, current_event_topic):
@@ -174,8 +224,8 @@ class HookalertnowForwarder(NotificationForwarder):
 
         severity = getattr(event, "severity", "critical")
         status = getattr(event, "status", "firing")
-        is_bad = (severity in ("critical", "warning") and status == "firing")
-        is_harmless = (severity in ("info", "none") or status == "resolved")
+        is_bad = (severity in ("down", "critical", "warning", "unknown") and status == "firing")
+        is_harmless = (severity in ("up", "ok", "info", "none") or status == "resolved")
         auto_close = getattr(event, "auto_close", True)  # Standard: True
 
         payload_compare = {
@@ -196,6 +246,7 @@ class HookalertnowForwarder(NotificationForwarder):
 
         # Severity → Priority → Urgency/Impact
         target_priority = self.severity_to_priority.get(severity, INCIDENT_PRIORITY_MODERATE)  # Default: INCIDENT_PRIORITY_MODERATE
+        logger.info(f"wanted priority for {severity}, got {target_priority}")
         payload["impact"], payload["urgency"] = self.get_urgency_impact_for_priority(target_priority)
 
         ticket_data = self.lookup_ticket(event.event_topic)
@@ -213,7 +264,7 @@ class HookalertnowForwarder(NotificationForwarder):
                         return False
                     self.upsert_record(event.event_topic, sys_id, number, severity, status, payload_hash)
                     browser_url = self.url.replace("/api/now/table/incident", f"/now/nav/ui/classic/params/target/incident.do%3Fsys_id%3D{sys_id}")
-                    logger.info(f"Created new incident: {number} at {browser_url}, event_topic={event.event_topic}")
+                    logger.info(f"Created new incident: {number} at {browser_url}, event_topic={event.event_topic}, priority={target_priority} (urgency={payload['urgency']}, impact={payload['impact']})")
                     return True
                 else:
                     logger.critical(f"POST failed for event_topic={event.event_topic}: {response.status_code} {response.text}. Action: Attempted to create new incident.")
@@ -230,6 +281,8 @@ class HookalertnowForwarder(NotificationForwarder):
                 logger.critical(f"Could not fetch ticket {ticket_data['number']} for event_topic={event.event_topic}: {response.text}. Action: Attempted to retrieve incident state.")
                 return False
             sn_state = response.json()["result"]["state"]
+            sn_incident_attributes = response.json()["result"]
+            logger.info(f"live ticket data are {sn_incident_attributes}")
 
             if is_harmless:
                 if sn_state in (INCIDENT_STATE_IN_PROGRESS, INCIDENT_STATE_RESOLVED, INCIDENT_STATE_CLOSED, INCIDENT_STATE_CANCELLED):
